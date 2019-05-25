@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/gorilla/mux"
+	"gopkg.in/mgo.v2/bson"
 	"io/ioutil"
 	"net/http"
 	"strings"
@@ -33,7 +34,6 @@ func AddPost(w http.ResponseWriter, req *http.Request) {
 	postRepository := repository.NewPostRepository(db, "Post")
 	userRepository := repository.NewUserRepository(db, "User")
 	subjectRepository := repository.NewSubjectRepository(db, "Subject")
-	chiptRepository := repository.NewChipRepository(db, "Chip")
 	currentTime := time.Now()
 
 	user, err2 := userRepository.FindByEmail(msg.User.Email)
@@ -46,18 +46,13 @@ func AddPost(w http.ResponseWriter, req *http.Request) {
 		fmt.Println(err3)
 	}
 
-	chip, err4 := chiptRepository.FindByName(msg.Chip.Name)
-	if err4 != nil {
-		fmt.Println(err4)
-	}
-
 	var p models.Post
 	p.Text = msg.Text
 	p.Timestamp = currentTime.Format("3:4:5")
 	p.Date = currentTime.Format("2006-01-02")
 	p.User = user
 	p.Subject = subject
-	p.Chip = chip
+
 
 	// Vdo
 	if msg.VdoLink != nil {
@@ -69,14 +64,19 @@ func AddPost(w http.ResponseWriter, req *http.Request) {
 		} else {
 			// File
 			if msg.File != nil {
-				p.File, p.FileName = getFile(msg.File)
+				p.File = getFile(msg.File)
+				p.FileName = msg.FileName;
+				fmt.Println(msg.File)
 			}
 			// Picture
 			if msg.Picture != nil {
 				p.Picture = getPicture(msg.Picture)
+				fmt.Println(msg.Picture)
 			}
 			postRepository.Save(&p)
 		}
+	} else {
+		postRepository.Save(&p)
 	}
 
 
@@ -104,19 +104,15 @@ func getVdoLink (vdoLink []string)  ([]string, string){
 	return vdoLinkAll, "1"
 }
 
-func getFile (File []string) ([]string, []string) {
-	var FileAll, FileNameAll, temp []string
+func getFile (File []string) ([]string) {
+	var FileAll []string
 	for i := 0; i < len(File); i++ {
 		if File[i] == "" {
 			continue
 		}
 		FileAll = append(FileAll, File[i])
-
-		temp = strings.Split(File[i], "/")
-		temp = strings.Split(temp[7], "?")
-		FileNameAll = append(FileNameAll, temp[0])
 	}
-	return FileAll, FileNameAll
+	return FileAll
 }
 
 func getPicture (Picture []string) ([] string) {
@@ -162,44 +158,38 @@ func GetPostByCode(w http.ResponseWriter, req *http.Request) {
 
 }
 
-func UploadFileChunk(w http.ResponseWriter, r *http.Request) {
-	fmt.Println("File Upload Endpoint Hit")
-
-	r.ParseMultipartForm(10 << 20)
-
-	file, handler, err := r.FormFile("profile")
+func DeletePost(w http.ResponseWriter, req *http.Request) {
+	//
+	db, err := config.GetMongoDB()
 	if err != nil {
-		fmt.Println("error can not get data")
 		fmt.Println(err)
-		return
 	}
 
-	//name := strings.Split(handler.Filename, ".")
-	fmt.Println(handler, file)
+	postRepository := repository.NewPostRepository(db, "Post")
+	params := mux.Vars(req)
+	var postId = string(params["postid"])
+	fmt.Println(postId)
+	post , err := postRepository.FindByID(bson.ObjectIdHex(postId))
+	fmt.Println(post)
+	err = postRepository.Delete(post)
+	if err != nil {
+	}
+}
+func GetPostById(w http.ResponseWriter, req *http.Request) {
 	//
-	//db, err := config.GetMongoDB()
-	//if err != nil {
-	//
-	//}
-	//
-	//src, err := handler.Open()
-	//if err != nil {
-	//
-	//	return
-	//}
-	//defer src.Close()
-	//
-	//
-	//dst, err := os.Create("./img/" + handler.Filename)
-	//if err != nil {
-	//	fmt.Println(err)
-	//	return
-	//}
-	//defer dst.Close()
-	//
-	//io.Copy(dst, src)
-	//
-	//imgRepository := repository.NewImgRepository(db, "Img")
-	//imgRepository.Save(img)
-	//json.NewEncoder(w).Encode(img.ID)
+	db, err := config.GetMongoDB()
+	if err != nil {
+		fmt.Println(err)
+	}
+
+	postRepository := repository.NewPostRepository(db, "Post")
+
+	params := mux.Vars(req)
+	var postid = string(params["postid"])
+	post, err2 := postRepository.FindByID(bson.ObjectIdHex(postid))
+	if err2 != nil {
+		fmt.Println(err2)
+	}
+	json.NewEncoder(w).Encode(post)
+
 }

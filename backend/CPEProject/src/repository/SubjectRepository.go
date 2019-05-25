@@ -99,3 +99,29 @@ func (r *SubjectRepositoryMongo) FindByMajor (majorName string) (models.Subjects
 	}
 	return subject, nil
 }
+
+func (r *SubjectRepositoryMongo) FindByCodeEx(code string) (models.Subjects, error){
+	var subject models.Subjects
+	err := r.db.C(r.collection).Find(bson.M{"code": bson.RegEx{code, ""}}).All(&subject)
+
+	if err != nil {
+	
+	}
+
+	return subject, nil
+}
+
+func (r *SubjectRepositoryMongo) FindByNameEx(name string) (models.Subjects, error){
+	var subject models.Subjects
+	err := r.db.C(r.collection).Find(bson.M{"name": bson.RegEx{name, ""}}).All(&subject)
+
+	if err != nil {
+
+	}
+
+	return subject, nil
+}
+func (r *SubjectRepositoryMongo) DeleteByCode(code string) error{
+	err := r.db.C(r.collection).Remove(bson.M{"code": code})
+	return err
+}

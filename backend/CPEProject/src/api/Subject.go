@@ -8,6 +8,8 @@ import (
 	"CPEProject/src/models"
 	"CPEProject/config"
 	"CPEProject/src/repository"
+	"strconv"
+	"strings"
 )
 
 
@@ -59,24 +61,31 @@ func GetSubjectByMajor(w http.ResponseWriter, req *http.Request)  {
 
 }
 
-//Default data Major
-func AddSubjectDefault(subjectName string, code string, majorName string)  {
+func GetSubjectByCode(w http.ResponseWriter, req *http.Request)  {
+	//
 	db, err := config.GetMongoDB()
 	if err != nil {
 		fmt.Println(err)
 	}
 	subjectRepository := repository.NewSubjectRepository(db, "Subject")
-	majorRepository := repository.NewMajorRepository(db, "Major")
-	major, err2 := majorRepository.FindByName(majorName)
-	if err2 != nil {
-		fmt.Println(err2)
+	//get variable by path
+	params := mux.Vars(req)
+	var code = string(params["code"])
+	if _, err := strconv.Atoi(code); err == nil || strings.Contains(code, "*") {
+		subject, err2 := subjectRepository.FindByCodeEx(code)
+		json.NewEncoder(w).Encode(subject)
+		if err2 != nil {
+			fmt.Println(err2)
+		}
+	} else {
+		subject, err2 := subjectRepository.FindByNameEx(code)
+		json.NewEncoder(w).Encode(subject)
+		if err2 != nil {
+			fmt.Println(err2)
+		}
 	}
-	var p models.Subject
-	p.Name = subjectName
-	p.Code = code
-	p.Major = major
-	subjectRepository.Save(&p)
 }
+
 func GetSubjectAll(w http.ResponseWriter, req *http.Request) {
 
 	//
@@ -91,4 +100,58 @@ func GetSubjectAll(w http.ResponseWriter, req *http.Request) {
 		fmt.Println(err2)
 	}
 	json.NewEncoder(w).Encode(post)
+}
+
+
+func GetSubjectByMajorEmail(w http.ResponseWriter, req *http.Request)  {
+	//
+	db, err := config.GetMongoDB()
+	if err != nil {
+		fmt.Println(err)
+	}
+
+	userRepository := repository.NewUserRepository(db, "User")
+	params := mux.Vars(req)
+	var majorName = string(params["major"])
+	var email = string(params["email"])
+
+	user, err := userRepository.FindByEmail(email)
+	var subjects models.SubjectPointer
+	for i := 0; i < len(user.Subject); i++ {
+		if user.Subject[i].Major.Name == majorName {
+			subjects = append(subjects, user.Subject[i])
+		}
+	}
+	json.NewEncoder(w).Encode(subjects)
+
+}
+
+func GetSubjectFromUser(w http.ResponseWriter, req *http.Request)  {
+	//
+	db, err := config.GetMongoDB()
+	if err != nil {
+		fmt.Println(err)
+	}
+
+	userRepository := repository.NewUserRepository(db, "User")
+	params := mux.Vars(req)
+	var email = string(params["email"])
+
+	user, err := userRepository.FindByEmail(email)
+	var subjects models.SubjectPointer
+	for i := 0; i < len(user.Subject); i++ {
+			subjects = append(subjects, user.Subject[i])
+	}
+	json.NewEncoder(w).Encode(subjects)
+}
+func DeleteSubject(w http.ResponseWriter, req *http.Request) {
+	fmt.Println("Go Mongo Db")
+	db, err := config.GetMongoDB()
+	if err != nil {
+		fmt.Println(err)
+	}
+	subjectRepository := repository.NewSubjectRepository(db, "Subject")
+	params := mux.Vars(req)
+	var code = string(params["code"])
+	subjectRepository.DeleteByCode(code)
 }

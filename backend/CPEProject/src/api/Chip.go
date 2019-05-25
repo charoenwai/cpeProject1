@@ -18,7 +18,7 @@ func AddChip(w http.ResponseWriter, req *http.Request)  {
 	if err != nil {
 		fmt.Println(err)
 	}
-	chipRepository := repository.NewChipRepository(db, "Chip")
+	chipRepository := repository.NewChipRepositorry(db, "Chip")
 	//
 
 	params := mux.Vars(req)
@@ -28,11 +28,10 @@ func AddChip(w http.ResponseWriter, req *http.Request)  {
 	var p models.Chip
 	p.Name = name
 	chipRepository.Save(&p)
-
 }
 
 
-func GetChipById(w http.ResponseWriter, req *http.Request) {
+func GetChipId(w http.ResponseWriter, req *http.Request) {
 
 	//
 	fmt.Println("Go Mongo Db")
@@ -40,7 +39,7 @@ func GetChipById(w http.ResponseWriter, req *http.Request) {
 	if err != nil {
 		fmt.Println(err)
 	}
-	chipRepository := repository.NewChipRepository(db, "Chip")
+	chipRepository := repository.NewChipRepositorry(db, "Chip")
 	//
 	params := mux.Vars(req)
 	fmt.Println(params["id"])
@@ -64,7 +63,7 @@ func GetChipAll(w http.ResponseWriter, req *http.Request) {
 	if err != nil {
 		fmt.Println(err)
 	}
-	chipRepository := repository.NewChipRepository(db, "Chip")
+	chipRepository := repository.NewChipRepositorry(db, "Chip")
 	post, err2 := chipRepository.FindAll()
 	if err2 != nil {
 		fmt.Println(err2)
@@ -78,7 +77,7 @@ func AddChipDefualt(chipname string)  {
 	if err != nil {
 		fmt.Println(err)
 	}
-	chipRepository := repository.NewChipRepository(db, "Chip")
+	chipRepository := repository.NewChipRepositorry(db, "Chip")
 	var p models.Chip
 	p.Name = chipname
 	chipRepository.Save(&p)

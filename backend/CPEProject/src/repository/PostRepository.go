@@ -28,23 +28,23 @@ func (r *PostRepositoryMongo) Save(user *models.Post) error{
 }
 
 //Update
-func (r *PostRepositoryMongo) Update(id string, post *models.Post) error{
+func (r *PostRepositoryMongo) Update( post *models.Post) error{
 	//Get ตัวแปรแล้วมาเปลี่ยนค่าแล้ว save
 	// faculty.UpdatedAt = time.Now()
-	err := r.db.C(r.collection).Update(bson.M{"id": id}, post)
+	err := r.db.C(r.collection).Update(bson.M{"_id": post.ID}, post)
 	return err
 }
 
 //Delete
-func (r *PostRepositoryMongo) Delete(id string) error{
-	err := r.db.C(r.collection).Remove(bson.M{"id": id})
+func (r *PostRepositoryMongo) Delete(post *models.Post) error{
+	err := r.db.C(r.collection).Remove(bson.M{"_id": post.ID})
 	return err
 }
 
 //FindByID
-func (r *PostRepositoryMongo) FindByID(id string) (*models.Post, error){
+func (r *PostRepositoryMongo) FindByID(id bson.ObjectId) (*models.Post, error){
 	var post models.Post
-	err := r.db.C(r.collection).Find(nil).One(&post)
+	err := r.db.C(r.collection).Find(bson.M{"_id": id}).One(&post)
 
 	if err != nil {
 		return nil, err
