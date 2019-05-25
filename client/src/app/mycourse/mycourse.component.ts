@@ -1,20 +1,22 @@
-import {Component, OnInit, ElementRef, ViewChild} from '@angular/core';
-import {DomSanitizer} from '@angular/platform-browser';
-import {MatIconRegistry} from '@angular/material';
-import {HttpClient} from '@angular/common/http';
-import {PostService} from '../service/post.service';
-import {AngularFireStorage, AngularFireStorageReference, AngularFireUploadTask} from 'angularfire2/storage';
-import {Observable} from 'rxjs/Observable';
-import {animate, state, style, transition, trigger} from '@angular/animations';
-import {DataSource} from '@angular/cdk/collections';
-import {ActivatedRoute, Router} from '@angular/router';
-import {COMMA, ENTER} from '@angular/cdk/keycodes';
-import {FormControl} from '@angular/forms';
-import {MatAutocompleteSelectedEvent, MatChipInputEvent, MatAutocomplete} from '@angular/material';
-import {map, startWith} from 'rxjs/operators';
+import { Component, OnInit } from '@angular/core';
+import { DomSanitizer } from '@angular/platform-browser';
+import { MatIconRegistry } from '@angular/material';
+import { HttpClient } from '@angular/common/http';
+import { PostService } from '../service/post.service';
+import { AngularFireStorage, AngularFireStorageReference, AngularFireUploadTask } from '@angular/fire/storage';
+import { Observable } from 'rxjs/Observable';
+import { animate, state, style, transition, trigger } from '@angular/animations';
+import { DataSource } from '@angular/cdk/collections';
+import { ActivatedRoute, Router } from '@angular/router';
+import { AuthenService } from '../service/authen.service';
 
-
-
+export  interface Comment {
+  text: string;
+  user: {
+    name: string
+    email: string
+  };
+}
 export interface FacultyComponent {
   name: string;
 }
@@ -22,19 +24,16 @@ export interface FacultyComponent {
 export interface Post {
   text: string;
   user: {
-    firstname: string
-    lastname: string
-    email: string
+    name: string;
+    email: string;
   };
   vdolink: string[];
   file: string[];
+  filename: string[];
   picture: string[];
   subject: {
     name: string;
     code: string;
-  };
-  chip: {
-    name: string[];
   };
 }
 
@@ -44,143 +43,32 @@ export interface Post {
   styleUrls: ['./mycourse.component.css'],
   animations: [
     trigger('detailExpand', [
-      state('collapsed', style({height: '0px', minHeight: '0', display: 'none'})),
-      state('expanded', style({height: '*'})),
+      state('collapsed', style({ height: '0px', minHeight: '0', display: 'none' })),
+      state('expanded', style({ height: '*' })),
       transition('expanded <=> collapsed', animate('225ms cubic-bezier(0.4, 0.0, 0.2, 1)')),
     ]),
   ],
 })
 export class MycourseComponent implements OnInit {
-  // table
-  dataSource = new FacultyDataSource(this.postService);
-  columnsToDisplay = ['สำนักวิชา'];
-  // chip
-  visible = true;
-  selectableChip = true;
-  removableChip = true;
-  addOnBlurChip = true;
-  chipSeparatorKeysCodes: number[] = [ENTER, COMMA];
-  chipCtrl = new FormControl();
-  filteredChips: Observable<string[]>;
-  chipTemp: string[] = [];
-  chipTagDB: string[] = [];
-  @ViewChild('ChipInput') ChipInput: ElementRef;
-
-  selectable = true;
-  removable = true;
-  addOnBlur = true;
-  separatorKeysCodes: number[] = [ENTER, COMMA];
-  codeCtrl = new FormControl();
-  filteredCodes: Observable<string[]>;
-  chipCode: string[] = [];
-  chipSubjectCode: string[] = [];
-  @ViewChild('chipCodeInput') chipCodeInput: ElementRef<HTMLInputElement>;
-  @ViewChild('auto') matAutocomplete: MatAutocomplete;
-  //
   constructor(private postService: PostService, private httpClient: HttpClient, iconRegistry: MatIconRegistry,
-              private sanitizer: DomSanitizer, private storage: AngularFireStorage, private route: ActivatedRoute,
-              private router: Router) {
-    // chip tag
-    this.filteredChips = this.chipCtrl.valueChanges.pipe(
-      startWith(null),
-      map((typePos: string | null) => typePos ? this.filterChip(typePos) : this.chipTagDB.slice()));
-      
-    this.filteredCodes = this.codeCtrl.valueChanges.pipe(
-      startWith(null),
-      map((fruit: string | null) => fruit ? this._filter(fruit) : this.chipSubjectCode.slice()));
-    // close chip
+    private sanitizer: DomSanitizer, private storage: AngularFireStorage, private route: ActivatedRoute,
+    private router: Router, private authenService: AuthenService) {
     iconRegistry.addSvgIcon(
-        'more',
-        this.sanitizer.bypassSecurityTrustResourceUrl('assets/more.svg'));
+      'more',
+      this.sanitizer.bypassSecurityTrustResourceUrl('assets/more.svg'));
     iconRegistry.addSvgIcon(
-        'hamIcon',
-        this.sanitizer.bypassSecurityTrustResourceUrl('assets/hamIcon.svg'));
+      'hamIcon',
+      this.sanitizer.bypassSecurityTrustResourceUrl('assets/hamIcon.svg'));
     iconRegistry.addSvgIcon(
-        'logout',
-        this.sanitizer.bypassSecurityTrustResourceUrl('assets/logout.svg'));
-    this.posts.user.email = this.route.snapshot.paramMap.get('email');
+      'logout',
+      this.sanitizer.bypassSecurityTrustResourceUrl('assets/logout.svg'));
     this.codeSubject = this.route.snapshot.paramMap.get('code');
-  }
-  // chip function
-  addChip(event: MatChipInputEvent): void {
-    const input = event.input;
-    const value = event.value;
-
-    // Add our fruit
-    if ((value || '').trim()) {
-      this.chipTemp.push(value.trim());
-    }
-
-    // Reset the input value
-    if (input) {
-      input.value = '';
-    }
-
-    this.chipCtrl.setValue(null);
+    this.nameSubject = this.route.snapshot.paramMap.get('name');
   }
 
-  removeChip(typePos: any): void {
-    const index = this.chipTemp.indexOf(typePos);
-
-    if (index >= 0) {
-      this.chipTemp.splice(index, 1);
-    }
-  }
-
-  filterChip(name: string) {
-    return this.chipTagDB.filter(typePos =>
-      typePos.toLowerCase().indexOf(name.toLowerCase()) === 0);
-  }
-
-  selectedChip(event: MatAutocompleteSelectedEvent): void {
-    this.chipTemp.push(event.option.viewValue);
-    this.ChipInput.nativeElement.value = '';
-    this.chipCtrl.setValue(null);
-  }
-
-
-  add(event: MatChipInputEvent): void {
-    // Add fruit only when MatAutocomplete is not open
-    // To make sure this does not conflict with OptionSelected Event
-    if (!this.matAutocomplete.isOpen) {
-      const input = event.input;
-      const value = event.value;
-
-      // Add our fruit
-      if ((value || '').trim()) {
-        this.chipCode.push(value.trim());
-      }
-
-      // Reset the input value
-      if (input) {
-        input.value = '';
-      }
-
-      this.codeCtrl.setValue(null);
-    }
-  }
-
-  remove(fruit: string): void {
-    const index = this.chipCode.indexOf(fruit);
-
-    if (index >= 0) {
-      this.chipCode.splice(index, 1);
-    }
-  }
-
-  selected(event: MatAutocompleteSelectedEvent): void {
-    this.chipCode.push(event.option.viewValue);
-    this.chipCodeInput.nativeElement.value = '';
-    this.codeCtrl.setValue(null);
-  }
-
-  private _filter(value: string): string[] {
-    const filterValue = value.toLowerCase();
-
-    return this.chipSubjectCode.filter(fruit => fruit.toLowerCase().indexOf(filterValue) === 0);
-  }
-  // close chip
-
+  // Firebase Authen
+  user: firebase.User;
+  //
   // upload vdo many
   count: number;
   tempVdoLink: string[] = ['', '', '', '', ''];
@@ -201,21 +89,9 @@ export class MycourseComponent implements OnInit {
     '', '', '', '', '', '', '', '', '', ''];
   isPic: boolean;
   // FileUpload
-  ref: AngularFireStorageReference;
+  ref: Array<AngularFireStorageReference> = new Array<AngularFireStorageReference>(30);
+  refFile: Array<AngularFireStorageReference> = new Array<AngularFireStorageReference>(5);
   task: AngularFireUploadTask;
-  uploadProgress: Observable<number>[] = [null, null, null, null, null];
-  downloadURL: Observable<string>[] = [null, null, null, null, null];
-  uploadState: Observable<string>[] = [null, null, null, null, null];
-  // Picturee Upload
-  uploadProgressPic: Observable<number>[] = [null, null, null, null, null, null, null, null, null, null,
-    null, null, null, null, null, null, null, null, null, null,
-    null, null, null, null, null, null, null, null, null, null];
-  downloadURLPic: Observable<string>[] = [null, null, null, null, null, null, null, null, null, null,
-    null, null, null, null, null, null, null, null, null, null,
-    null, null, null, null, null, null, null, null, null, null];
-  uploadStatePic: Observable<string>[] = [null, null, null, null, null, null, null, null, null, null,
-    null, null, null, null, null, null, null, null, null, null,
-    null, null, null, null, null, null, null, null, null, null];
   //
   nameSubject: string;
   codeSubject: string;
@@ -223,37 +99,77 @@ export class MycourseComponent implements OnInit {
   major: Array<any>;
   subject: Array<any>;
   post: Array<any>;
-  user: Array<any>;
-  //
-  chip: Array<any>;
-  nameChip: string;
-  //
+  comment: Array<any>;
   select: any = {
-    text: ''
+    text: '',
+    commentText: ''
   };
   posts: Post = {
     text: '',
     user: {
-      firstname: '',
-      lastname: '',
+      name: '',
       email: ''
     },
     vdolink: ['', '', '', '', ''],
-    file: ['', '', '', '', ''],
-    picture: ['', '', '', '', '', '', '', '', '', '',
-      '', '', '', '', '', '', '', '', '', '',
-      '', '', '', '', '', '', '', '', '', ''],
+    file: [],
+    filename: [],
+    picture: [],
     subject: {
       name: '',
       code: ''
-    },
-    chip:{
-      name: ['']
     }
   };
+  comments: Comment = {
+    text: '',
+    user: {
+      name: '',
+      email: ''
+    },
+  };
+  // table faculty
+  dataSource = new FacultyDataSource(this.postService, this.posts.user.email);
+  columnsToDisplay = ['สำนักวิชา'];
+  // post
+  isPost: boolean;
+  isUpload: boolean;
+  file: Array<File> = new Array<File>(5);
+  picture: Array<File> = new Array<File>(30);
+  countFileChoose: number;
+  countPicChoose: number;
+  countFileStatus: number;
+  countPicStatus: number;
+  disPlayName: string;
+  isPosting: boolean;
 
-
+  inputCode: '';
   ngOnInit() {
+    this.authenService.getLoggedInUser().subscribe(user => {
+      console.log(user);
+      this.user = user;
+      this.posts.user.email = user.email;
+      
+      if (user.displayName !== null) {
+        this.disPlayName = user.displayName;
+      } else {
+        this.disPlayName = user.email;
+      }
+      // user comment
+      this.comments.user.email = user.email;
+      this.comments.user.name = user.displayName;
+      console.log("print user: "+user);
+      console.log("print comment user: "+this.comments.user.name);
+      //
+    });
+    this.posts.subject.code = this.codeSubject;
+    this.posts.subject.name = this.nameSubject;
+
+    this.countPicChoose = 0;
+    this.countFileChoose = 0;
+    this.countFileStatus = 0;
+    this.countPicStatus = 0;
+    this.isUpload = false;
+    this.isPost = false;
+    this.isPosting = false;
     this.isFile = true;
     this.isPic = true;
     this.isAddVdo = true;
@@ -261,82 +177,167 @@ export class MycourseComponent implements OnInit {
     this.countFile = 0;
     this.countPic = 0;
     this.refresh();
-    this.postService.getSubjectByCode(this.codeSubject).subscribe(data => {
-          this.posts.subject.code = this.codeSubject;
-          this.posts.subject.name = this.nameSubject;
-          this.nameSubject = data;
-        }
-    );
+
     this.postService.getFeed(this.codeSubject).subscribe(data => {
       this.post = data;
     });
-    this.postService.getUser(this.posts.user.email).subscribe(data => {
-      this.user = data;
-      this.posts.user.firstname = data.firstname;
-      this.posts.user.lastname = data.lastname;
-    });
-    this.postService.getFaculty().subscribe(data => {
-      this.faculty = data;
-    });
-    this.postService.getChips().subscribe(data => {
-      let i;
-      for (i = 0; i < data.length; i++) {
-        this.chipTagDB.push(data[i].name);
-      }
-      console.log(this.chipTagDB);
-    });
-    this.postService.getSubjects().subscribe(data => {
-      let i;
-      for (i = 0; i < data.length; i++) {
-        this.chipSubjectCode.push(data[i].code);
-      }
-      console.log(this.chipSubjectCode);
-    });
+  }
+  UPLOAD() {
+    console.log('File');
+    for (let i = 0; i < this.countFileChoose; i++) {
+      this.refFile[i] = this.storage.ref( 'File' + this.dateAsYYYYMMDDHHNNSS(new Date()).concat(i.toString()));
+      this.refFile[i].put(this.file[i]).then((result) => {
+        if (result.state !== 'success') {
+          this.checkFile(result.state);
+        } else {
+          this.refFile[i].getDownloadURL().subscribe(
+            data => {
+              console.log('push');
+              this.posts.file.push(data);
+              this.posts.filename.push(this.file[i].name);
+              this.countFileStatus += 1;
+              console.log(this.countFileStatus);
+              console.log(this.posts.file);
+            }
+          );
+        }
+      });
+    }
   }
 
-  test() {
-    this.posts.text = this.select.text;
-    this.posts.file = this.tempFileLink;
-    this.posts.vdolink = this.tempVdoLink;
-    this.posts.picture = this.tempPicLink;
-
-    //
-    console.log(this.chipTemp);
-    this.chip = null;
-    this.postService.getChip(this.chipTemp).subscribe(data => {
-      this.chip = data;
-      this.posts.chip.name = data.name;
-    });
-    //
-    this.postService.createArticle(this.posts).subscribe(
-        data => {
-          if (data) {
-            console.log(data);
-            alert(data);
+  UPLOADPIC() {
+    console.log('Pic');
+    if (this.countFileChoose !== this.countFileStatus) {
+      setTimeout(() => {
+        this.UPLOADPIC();
+      }, 200);
+    } else {
+      for (let i = 0; i < this.countPicChoose; i++) {
+        this.ref[i] = this.storage.ref( 'Pic' + this.dateAsYYYYMMDDHHNNSS(new Date()).concat(i.toString()));
+        this.ref[i].put(this.picture[i]).then((result) => {
+          if (result.state !== 'success') {
+            this.checkPicture(result.state);
           } else {
-            alert('success');
-            console.log(this.chip);
-            this.getFeed(this.codeSubject, this.nameSubject);
+            this.ref[i].getDownloadURL().subscribe(
+              data => {
+                console.log('push');
+                this.posts.picture.push(data);
+                this.countPicStatus += 1;
+                console.log(this.countPicStatus);
+                console.log(this.posts.picture);
+              }
+            );
           }
-        },
-        error1 => {
+        });
+      }
+    }
+  }
+
+  UPLOADALL() {
+    this.posts.text = this.select.text;
+    this.posts.vdolink = this.tempVdoLink;
+    this.postService.createArticle(this.posts).subscribe(
+      data => {
+        if (data) {
+          console.log(data);
+          alert(data);
+        } else {
+          alert('success');
+          this.isPost = false;
+          this.isPosting = false;
+          this.getFeed(this.codeSubject, this.nameSubject);
         }
+      },
+      error1 => {
+      }
     );
     this.posts.text = '';
     this.select.text = '';
-    this.posts.file = null;
-    this.posts.vdolink = null;
-    this.posts.picture = null;
-    this.tempVdoLink = null;
-    this.tempPicLink = null;
-    this.tempVdoLink2 = null;
-    this.tempFileLink = null;
-    this.tempFileLink2 = null;
+    this.posts.file.splice(0);
+    this.posts.vdolink.splice(0);
+    this.posts.picture.splice(0);
+    this.file.splice(0);
+    this.picture.splice(0);
+    this.countFileChoose = 0;
+    this.countFileStatus = 0;
+    this.countPicChoose = 0;
+    this.countPicStatus = 0;
+    this.countPic = 0;
+    this.countFile = 0;
+
+    this.ref.splice(0);
+    this.refFile.splice(0);
+    for (let i = 0; i < this.count; i++) {
+      this.tempVdoLink[i] = '';
+      this.tempVdoLink2[i] = '';
+    }
+    this.count = 0;
+  }
+
+  test() {
+    this.isPosting = true;
+    if (this.countPicChoose !== 0 || this.countFileChoose !== 0) {
+      alert('Uploading...');
+    }
+    if (this.countFileChoose !== 0) {
+      this.UPLOAD();
+    }
+    if (this.countPicChoose !== 0) {
+      this.UPLOADPIC();
+    }
+    this.checkSuccess();
+  }
+  // postComment(postsID) {
+  //   alert(postsID);
+  //   this.comments.text = this.select.commentText;
+  //   this.postService.createComment(this.comments, postsID).subscribe(
+  //       data => {
+  //         if (data) {
+  //           console.log(data);
+  //           alert(data);
+  //         } else {
+  //           alert('comment success!');
+  //           // this.getFeed(this.codeSubject, this.nameSubject);
+  //         }
+  //       },
+  //       error1 => {
+  //       }
+  //   );
+  //   this.comments.text = '';
+  //   this.select.commentText = '';
+  // }
+
+  checkFile(state) {
+    if (state !== 'success') {
+      setTimeout(this.checkFile, 300);
+      console.log('wait');
+    } else {
+      console.log('successFile');
+    }
+  }
+
+  checkPicture(state) {
+    if (state !== 'success') {
+      console.log('wait');
+      setTimeout(this.checkPicture, 300);
+    } else {
+      console.log('successPicture');
+    }
+  }
+
+  checkSuccess() {
+    if (this.countPicStatus === this.countPicChoose && this.countFileStatus === this.countFileChoose) {
+      this.UPLOADALL();
+    } else {
+      setTimeout(() => {
+        this.checkSuccess();
+      }, 300);
+    }
   }
 
   getMajor(facultyName) {
     this.major = null;
-    this.postService.getMajor(facultyName).subscribe(data => {
+    this.postService.getMajorByEmail(facultyName, this.posts.user.email).subscribe(data => {
       this.major = data;
     });
 
@@ -344,12 +345,13 @@ export class MycourseComponent implements OnInit {
 
   getSubject(majorName) {
     this.subject = null;
-    this.postService.getSubject(majorName).subscribe(data => {
+    this.postService.getSubjectByEmail(majorName, this.posts.user.email).subscribe(data => {
       this.subject = data;
     });
   }
 
   getFeed(code, name) {
+    this.router.navigate(['/mycourse', code, name]);
     this.postService.getFeed(code).subscribe(data => {
       this.post = data;
       this.nameSubject = name;
@@ -373,64 +375,48 @@ export class MycourseComponent implements OnInit {
   }
 
   upload(event, index) {
-    this.downloadURL[index] = null;
-    const file = event.target.files[0];
-    if (file.name.includes('pdf', 0) |
-        file.name.includes('docx', 0) |
-        file.name.includes('doc', 0)
-    ) {
-      const filePath = file.name;
-      this.ref = this.storage.ref(filePath);
-      this.task = this.ref.put(file);
-      this.uploadState[index] = this.task.snapshotChanges().pipe(map(s => s.state));
-      this.uploadProgress[index] = this.task.percentageChanges();
-      this.downloadURL[index] = this.ref.getDownloadURL();
-      console.log(this.downloadURL);
-      if (this.downloadURL[index] === null) {
-        alert('Can not upload file, please try again');
-        this.downloadURL[index] = null;
-      }
+    if (event.target.files[0].size > 25000000) {
+      alert('The file you have selected is too large. The maximum size is 25MB. Please compress file');
     } else {
-      alert('Please choose file as type : pdf, word , exel and ppt');
+      this.file[index] = event.target.files[0];
+      if (this.countFileChoose === 0) {
+        this.countFileChoose += 1;
+      } else if (index >= this.countFileChoose) {
+        this.countFileChoose += 1;
+      }
+      if (this.file[index].name.includes('pdf', 0) ||
+        this.file[index].name.includes('doc', 0) ||
+        this.file[index].name.includes('ppt', 0) ||
+        this.file[index].name.includes('xls', 0) ||
+        this.file[index].name.includes('zip', 0) ||
+        this.file[index].name.includes('rar', 0)
+      ) {
+      } else {
+        alert('Please choose file as type : pdf, word , exel, ppt, rar and zip');
+      }
     }
   }
 
   refresh() {
-    this.postService.getFacultyTable().subscribe((res) => {
-      this.faculty = res;
-      this.dataSource = new FacultyDataSource(this.postService);
-    });
-  }
-
-  checkLink(link) {
-    console.log(link);
-    if (link.includes('pdf', 0) |
-        link.includes('ppt', 0) |
-        link.includes('xls', 0) |
-        link.includes('doc', 0)) {
-      link.isLinkDocument = true;
-      link.isLinkPic = false;
+    if (this.posts.user.email === '') {
+      setTimeout(() => {
+        this.refresh();
+      }, 10);
     } else {
-      link.isLinkPic  = true;
-      link.isLinkDocument = false;
+      this.postService.getFacultyTableByEmail(this.posts.user.email).subscribe((res) => {
+        this.faculty = res;
+        this.dataSource = new FacultyDataSource(this.postService, this.posts.user.email);
+      });
     }
-    console.log(link.isLinkPic);
-    console.log(link.isLinkDocument);
-  }
-
-  getFireUrl(link) {
-    return 'https://firebasestorage.googleapis.com/v0/b/cpeproject.appspot.com/o/' + link.file;
   }
 
   isAddFunc() {
-    if (this.tempVdoLink.length === this.count) {
+    if (5 === this.count) {
       alert('Limited video at 5 link');
     } else {
       if (this.isAddVdo === true) {
         this.tempVdoLink2[this.count] = '1';
         this.count += 1;
-        console.log(this.tempVdoLink);
-        console.log(this.count);
       }
     }
   }
@@ -441,14 +427,6 @@ export class MycourseComponent implements OnInit {
       this.tempVdoLink2[this.count] = '';
       this.tempVdoLink[this.count] = '';
     }
-  }
-
-  // file
-  URL(url, index) {
-    if (url === null) {
-      alert('Can not upload');
-    }
-    this.tempFileLink[index] = url;
   }
 
   isFileFunc() {
@@ -470,6 +448,7 @@ export class MycourseComponent implements OnInit {
 
     } else {
       this.countFile -= 1;
+      this.countFileChoose -= 1;
       this.tempFileLink[this.countFile] = '';
       this.tempFileLink2[this.countFile] = '';
     }
@@ -495,44 +474,121 @@ export class MycourseComponent implements OnInit {
 
     } else {
       this.countPic -= 1;
+      this.countPicChoose -= 1;
       this.tempPicLink[this.countPic] = '';
       this.tempPicLink2[this.countPic] = '';
     }
   }
 
   uploadPic(event, index) {
-    this.downloadURLPic[index] = null;
-    const file = event.target.files[0];
-    if (file.name.includes('jpg', 0) |
-        file.name.includes('png', 0)
-    ) {
-      const filePath = file.name;
-      this.ref = this.storage.ref(filePath);
-      this.task = this.ref.put(file);
-      this.uploadStatePic[index] = this.task.snapshotChanges().pipe(map(s => s.state));
-      this.uploadProgressPic[index] = this.task.percentageChanges();
-      this.downloadURLPic[index] = this.ref.getDownloadURL();
-      if (this.downloadURLPic[index] === null) {
-        alert('Can not upload file, please try again');
-      }
+    if (event.target.files[0].size > 1000000) {
+      alert('The picture you have selected is too large. The maximum size is 1MB.');
     } else {
-      alert('Please choose picture!');
+      this.picture[index] = event.target.files[0];
+      if (this.countPicChoose === 0) {
+        this.countPicChoose += 1;
+      } else if (index >= this.countPicChoose) {
+        this.countPicChoose += 1;
+      }
+      if (this.picture[index].name.includes('png', 0) ||
+        this.picture[index].name.includes('PNG', 0) ||
+        this.picture[index].name.includes('jpg', 0) ||
+        this.picture[index].name.includes('JPG', 0)
+      ) {
+      } else {
+        alert('Please choose picture as type : png or jpg');
+      }
     }
   }
 
-  URLPic(url, index) {
-    this.tempPicLink[index] = url;
+  Post() {
+    if (this.isPost === false) {
+      this.isUpload = false;
+    }
+    this.isPost = !this.isPost;
+  }
+
+  isUploadFunc() {
+    this.isUpload = !this.isUpload;
+  }
+
+  delete(postid, picture, file) {
+    if (picture.length !== 0) {
+      for (let i = 0; i < picture.length; i++) {
+        let temp = (<string>picture[i]).split('/');
+        let picname = temp[7].split('?');
+        this.storage.ref(picname[0]).delete();
+      }
+    }
+    if (file.length !== 0) {
+      for (let i = 0; i < file.length; i++) {
+        let temp = (<string>file[i]).split('/');
+        let filename = temp[7].split('?');
+        console.log(filename[0]);
+        this.storage.ref(filename[0]).delete();
+      }
+    }
+    this.httpClient.get('http://localhost:12345/deletepost/' + postid, postid).subscribe(
+      data => {
+        if (!data) {
+          alert('Deleted');
+          this.getFeed(this.codeSubject, this.nameSubject);
+        }
+      }
+    );
+  }
+  logout() {
+    this.router.navigate(['/login']);
+    this.authenService.logout();
+  }
+  unfollow(code) {
+    this.httpClient.get('http://localhost:12345/unfollow/' + this.posts.user.email + '/' + code).subscribe(
+      data => {
+        if (!data) {
+          alert('Unfollow success');
+          this.postService.getFacultyTableByEmail(this.posts.user.email).subscribe((res) => {
+            this.faculty = res;
+            this.dataSource = new FacultyDataSource(this.postService, this.posts.user.email);
+          });
+        }
+      },
+      error => { }
+    );
+  }
+  search() {
+    console.log(this.inputCode);
+    if (this.inputCode === '') {
+        alert('Please enter subject code or subject name');
+    } else {
+        this.router.navigate(['/searchcourse', this.inputCode]);
+        this.inputCode = '';
+    }
+  }
+  dateAsYYYYMMDDHHNNSS(date): string {
+    return date.getFullYear()
+      + '-' + this.leftpad(date.getMonth() + 1, 2)
+      + '-' + this.leftpad(date.getDate(), 2)
+      + '-' + this.leftpad(date.getHours(), 2)
+      + '-' + this.leftpad(date.getMinutes(), 2)
+      + '-' + this.leftpad(date.getSeconds(), 2);
+  }
+
+  leftpad(val, resultLength = 2, leftpadChar = '0'): string {
+    return (String(leftpadChar).repeat(resultLength)
+      + String(val)).slice(String(val).length);
   }
 }
 
 export class FacultyDataSource extends DataSource<any> {
-  constructor(private postService: PostService) {
+  email: string;
+
+  constructor(private postService: PostService, email: string) {
     super();
-    //   this.name = this.memberUserName;
+    this.email = email;
   }
 
   connect(): Observable<FacultyComponent[]> {
-    return this.postService.getFacultyTable();
+    return this.postService.getFacultyTableByEmail(this.email);
   }
 
   disconnect() {
