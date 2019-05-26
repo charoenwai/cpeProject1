@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Observable } from 'rxjs';
-import { FacultyComponent, Post,Comment } from '../mycourse/mycourse.component';
+import { FacultyComponent, Post,Comment,Feedback } from '../mycourse/mycourse.component';
 
 @Injectable({
   providedIn: 'root'
@@ -82,5 +82,12 @@ export class PostService {
     headers.append('Access-Control-Allow-Credentials', 'true');
     headers.append('Content-Type', 'application/json');
     return this.http.post<Comment>(this.API + '/comment/' + postID, JSON.stringify(comment), {headers});
+  }
+  createFeedback(feedback: Feedback): Observable<Feedback> {
+    const headers = new HttpHeaders();
+    headers.append('Access-Control-Allow-Origin', 'http://localhost:12345');
+    headers.append('Access-Control-Allow-Credentials', 'true');
+    headers.append('Content-Type', 'application/json');
+    return this.http.post<Feedback>(this.API + '/feedback', JSON.stringify(feedback), { headers });
   }
 }

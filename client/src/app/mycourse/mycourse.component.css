@@ -333,7 +333,7 @@ tr.example-element-row:not(.example-expanded-row):active {
 /*facebook*/
 
 .facebookPage {
-    height: 315px;
+    height: 215px;
 }
 
 .chip-code {
@@ -485,5 +485,19 @@ iframe{
     margin-top: 10px;
     position: absolute;
     margin-left: 50px;
+}
+.feedBackButton {
+    font-size: 12px;
+    margin-left: 100px;
+    margin-top: 10px;
+    position: absolute;
+    float: center;
+    background-color: rgb(158, 3, 11);
+    color: white;
+}
+.commentFeedBack {
+    margin-left: 8px;
+    margin-top: 50px;
+    width: 90%;
 }
 

@@ -271,11 +271,11 @@
                                     <p>{{comments.text}}</p>
                                 </ng-container>
                         </mat-card-content>
-                            <ng-container *ngIf='!posts.comment'>
+                            <ng-container *ngIf='!posts.checkComment'>
                               <button mat-button (click)="isComment(posts)" class="addComment">comment
                               </button>
                             </ng-container>
-                            <ng-container *ngIf='posts.comment'>
+                            <ng-container *ngIf='posts.checkComment'>
                               <form>
                                 <mat-form-field class="comment">
                                   <textarea matInput [(ngModel)]="select.commentText"
@@ -304,7 +304,15 @@
                     scrolling="no" frameborder="0" style="border:none; overflow:hidden" allowtransparency="true"
                     class="facebookPage"></iframe>
             </div>
+            <button mat-raised-button class="feedBackButton" color="warn" (click)="feedBackClick(feedbackBoo)">รายงานปัญหา</button>
+            <ng-container *ngIf='!feedbackBoo'>
+                <mat-form-field class="commentFeedBack">
+                    <mat-placeholder>feedback</mat-placeholder>
+                    <textarea matInput [(ngModel)]="select.text" name="text"></textarea>
+                </mat-form-field>
+            </ng-container>
         </div>
+        
     </div>
     <div class="panelright">
     </div>

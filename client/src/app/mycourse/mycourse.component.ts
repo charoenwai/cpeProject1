@@ -17,6 +17,13 @@ export  interface Comment {
     email: string
   };
 }
+export  interface Feedback {
+  text: string;
+  user: {
+    name: string
+    email: string
+  };
+}
 export interface FacultyComponent {
   name: string;
 }
@@ -93,6 +100,9 @@ export class MycourseComponent implements OnInit {
   refFile: Array<AngularFireStorageReference> = new Array<AngularFireStorageReference>(5);
   task: AngularFireUploadTask;
   //
+  feedbackBoo: boolean;
+  userComment: boolean;
+  //
   nameSubject: string;
   codeSubject: string;
   faculty: Array<any>;
@@ -159,6 +169,7 @@ export class MycourseComponent implements OnInit {
       console.log("print user: "+user);
       console.log("print comment user: "+this.comments.user.name);
       //
+      this.feedbackBoo = true;
     });
     this.posts.subject.code = this.codeSubject;
     this.posts.subject.name = this.nameSubject;
@@ -287,25 +298,25 @@ export class MycourseComponent implements OnInit {
     }
     this.checkSuccess();
   }
-  // postComment(postsID) {
-  //   alert(postsID);
-  //   this.comments.text = this.select.commentText;
-  //   this.postService.createComment(this.comments, postsID).subscribe(
-  //       data => {
-  //         if (data) {
-  //           console.log(data);
-  //           alert(data);
-  //         } else {
-  //           alert('comment success!');
-  //           // this.getFeed(this.codeSubject, this.nameSubject);
-  //         }
-  //       },
-  //       error1 => {
-  //       }
-  //   );
-  //   this.comments.text = '';
-  //   this.select.commentText = '';
-  // }
+  postComment(postsID) {
+    // alert(postsID);
+    this.comments.text = this.select.commentText;
+    this.postService.createComment(this.comments, postsID).subscribe(
+        data => {
+          if (data) {
+            console.log("กดคอมเม้น"+data);
+            // alert(data);
+          } else {
+            alert('comment success!');
+            // this.getFeed(this.codeSubject, this.nameSubject);
+          }
+        },
+        error1 => {
+        }
+    );
+    this.comments.text = '';
+    this.select.commentText = '';
+  }
 
   checkFile(state) {
     if (state !== 'success') {
@@ -365,15 +376,6 @@ export class MycourseComponent implements OnInit {
   getEmbedUrl(link) {
     return this.sanitizer.bypassSecurityTrustResourceUrl(link);
   }
-
-  isComment(posts) {
-    posts.comment = true;
-  }
-
-  notComment(posts) {
-    posts.comment = false;
-  }
-
   upload(event, index) {
     if (event.target.files[0].size > 25000000) {
       alert('The file you have selected is too large. The maximum size is 25MB. Please compress file');
@@ -576,6 +578,20 @@ export class MycourseComponent implements OnInit {
   leftpad(val, resultLength = 2, leftpadChar = '0'): string {
     return (String(leftpadChar).repeat(resultLength)
       + String(val)).slice(String(val).length);
+  }
+  feedBackClick(feedBack){
+    this.feedbackBoo = !this.feedbackBoo;
+    console.log("feeeeeeeeeeeeeeeeeeeeeeeeeeeeeeed"+this.feedbackBoo)
+  }
+  isComment(posts) {
+    posts.checkComment = true;
+    console.log("commeeeeeeeeeeeeeeeeeeeeeeeeeeet"+posts.checkComment);
+    
+  }
+
+  notComment(posts) {
+    posts.checkComment = false;
+    console.log("commeeeeeeeeeeeeeeeeeeeeeeeeeeet"+posts.checkComment);
   }
 }
 

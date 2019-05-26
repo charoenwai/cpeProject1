@@ -70,6 +70,8 @@ func main() {
 	//comment
 	router.HandleFunc("/commenttext/{text}", api.AddComment).Methods("GET")
 	router.HandleFunc("/comment/{postID}", api.AddComment).Methods("POST")
+  	//feedback
+	router.HandleFunc("/feedback", api.AddPost).Methods("POST")
   	log.Fatal(http.ListenAndServe(":12345", handlers.CORS(handlers.AllowedMethods([]string{"GET", "POST", "PUT", "HEAD"}), handlers.AllowedOrigins([]string{"*"}))(router)))
   
 }
