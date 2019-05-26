@@ -478,13 +478,20 @@ iframe{
     color: rgb(255, 0, 140);
 }
 .headerimage-comment {
+    margin-left: 9px;
+    margin-top: 9px;
     background-size: cover;
     position: absolute;
 }
-.commentText{
-    margin-top: 10px;
+.commentName{
+    margin-top: 17px;
     position: absolute;
-    margin-left: 50px;
+    margin-left: 55px;
+}
+.commentText{
+    margin-left: 55px;
+    margin-top: 5px;
+    margin-bottom: 10px;
 }
 .feedBackButton {
     font-size: 12px;
@@ -492,12 +499,35 @@ iframe{
     margin-top: 10px;
     position: absolute;
     float: center;
-    background-color: rgb(158, 3, 11);
+    background-color: rgba(179, 24, 32, 0.952);
     color: white;
 }
 .commentFeedBack {
     margin-left: 8px;
     margin-top: 50px;
     width: 90%;
+}
+.postFeedback {
+    font-size: 12px;
+    margin-right: 20px;
+    margin-bottom: 15px;
+    float: right;
+    background-color: rgba(179, 24, 32, 0.952);
+    color: white;
+}
+.example-headers-align .mat-expansion-panel-header-title{
+    margin-top: 10px;
+    margin-bottom: 10px;
+    margin-left: 33%;
+}
+.mat-form-field {
+  margin-right: 12px;
+}
+.containerComment{
+    background-color: rgba(241, 241, 241, 0.952);
+    border-radius: 10px;
+}
+.requestInput{
+    width: 100%;
 }
 

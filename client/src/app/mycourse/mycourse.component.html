@@ -86,7 +86,27 @@
                 <tr mat-row *matRowDef="let row; columns: ['expandedDetail']" class="example-detail-row"></tr>
             </table>
             <br>
-
+            <ng-container>
+                <mat-accordion class="example-headers-align">
+                    <mat-expansion-panel hideToggle>
+                      <mat-expansion-panel-header>
+                        <mat-panel-title>ขอเพิ่มรายวิชา</mat-panel-title>
+                      </mat-expansion-panel-header>
+                  
+                      <mat-form-field class="requestInput">
+                        <textarea matInput placeholder="รหัสวิชา" [(ngModel)]="select.subjectcodeText" name="text"></textarea>
+                      </mat-form-field>
+                  
+                      <mat-form-field class="requestInput">
+                            <textarea matInput placeholder="ชื่อรายวิชา" [(ngModel)]="select.subjectnameText" name="text"></textarea>
+                          </mat-form-field>
+                  
+                      <mat-action-row>
+                        <button mat-button color="accent" (click)="postRequest()">Send</button>
+                      </mat-action-row>
+                    </mat-expansion-panel>
+                  </mat-accordion> 
+            </ng-container> 
         </div>
     </div>
 
@@ -262,14 +282,17 @@
                                     </mdb-carousel>
                                 </mat-tab>
                             </mat-tab-group>
+                            <br>
                             <ng-container *ngFor="let comments of posts.comment">
+                                <div class="containerComment">
                                     <div mat-card-avatar [ngStyle]="{'background-image': 'url(' + comments.user.picture + ')' }"
                                     class="headerimage-comment"></div>
-                                    <p class="commentText">{{comments.user.name}}</p>
+                                    <p class="commentName">{{comments.user.name}}</p>
                                     <span class="spacer"></span>
-                                    <br><br><br>
-                                    <p>{{comments.text}}</p>
-                                </ng-container>
+                                    <br><br>
+                                    <p class="commentText">{{comments.text}}</p>
+                                </div>
+                            </ng-container>
                         </mat-card-content>
                             <ng-container *ngIf='!posts.checkComment'>
                               <button mat-button (click)="isComment(posts)" class="addComment">comment
@@ -304,12 +327,14 @@
                     scrolling="no" frameborder="0" style="border:none; overflow:hidden" allowtransparency="true"
                     class="facebookPage"></iframe>
             </div>
-            <button mat-raised-button class="feedBackButton" color="warn" (click)="feedBackClick(feedbackBoo)">รายงานปัญหา</button>
+            <button mat-raised-button class="feedBackButton" color="warn" (click)="feedBackClick(feedbackBoo)"> แจ้งผู้พัฒนา </button>
             <ng-container *ngIf='!feedbackBoo'>
                 <mat-form-field class="commentFeedBack">
                     <mat-placeholder>feedback</mat-placeholder>
-                    <textarea matInput [(ngModel)]="select.text" name="text"></textarea>
+                    <textarea matInput [(ngModel)]="select.feedbackText" name="text"></textarea>
                 </mat-form-field>
+                <button mat-button class="postFeedback" (click)="postFeedback()">Send</button>
+                <br><br>
             </ng-container>
         </div>
         

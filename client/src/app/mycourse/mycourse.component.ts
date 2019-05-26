@@ -24,6 +24,14 @@ export  interface Feedback {
     email: string
   };
 }
+export  interface Request {
+  subjectcode: string;
+  subjectname: string;
+  user: {
+    name: string
+    email: string
+  };
+}
 export interface FacultyComponent {
   name: string;
 }
@@ -101,7 +109,6 @@ export class MycourseComponent implements OnInit {
   task: AngularFireUploadTask;
   //
   feedbackBoo: boolean;
-  userComment: boolean;
   //
   nameSubject: string;
   codeSubject: string;
@@ -110,9 +117,14 @@ export class MycourseComponent implements OnInit {
   subject: Array<any>;
   post: Array<any>;
   comment: Array<any>;
+  feedback: Array<any>;
+  request: Array<any>;
   select: any = {
     text: '',
-    commentText: ''
+    commentText: '',
+    feedbackText: '',
+    subjectcodeText: '',
+    subjectnameText: ''
   };
   posts: Post = {
     text: '',
@@ -131,6 +143,21 @@ export class MycourseComponent implements OnInit {
   };
   comments: Comment = {
     text: '',
+    user: {
+      name: '',
+      email: ''
+    },
+  };
+  feedbacks: Feedback = {
+    text: '',
+    user: {
+      name: '',
+      email: ''
+    },
+  };
+  requests: Request = {
+    subjectcode: '',
+    subjectname: '',
     user: {
       name: '',
       email: ''
@@ -166,8 +193,14 @@ export class MycourseComponent implements OnInit {
       // user comment
       this.comments.user.email = user.email;
       this.comments.user.name = user.displayName;
+      // user feedback
+      this.feedbacks.user.email = user.email;
+      this.feedbacks.user.name = user.displayName;
+      // user request
+      this.requests.user.email = user.email;
+      this.requests.user.name = user.displayName;
       console.log("print user: "+user);
-      console.log("print comment user: "+this.comments.user.name);
+      console.log("print feedback user: "+this.requests.user.name);
       //
       this.feedbackBoo = true;
     });
@@ -316,6 +349,43 @@ export class MycourseComponent implements OnInit {
     );
     this.comments.text = '';
     this.select.commentText = '';
+  }
+  postFeedback() {
+    this.feedbacks.text = this.select.feedbackText;
+    this.postService.createFeedback(this.feedbacks).subscribe(
+        data => {
+          if (data) {
+            console.log("กดfeedback: "+data);
+            // alert(data);
+          } else {
+            alert('feedback success!');
+          }
+        },
+        error1 => {
+        }
+    );
+    this.feedbacks.text = '';
+    this.select.feedbackText = '';
+  }
+  postRequest(){
+    this.requests.subjectcode = this.select.subjectcodeText;
+    this.requests.subjectname = this.select.subjectnameText;
+    this.postService.createRequest(this.requests).subscribe(
+        data => {
+          if (data) {
+            console.log("กดrequest: "+data);
+            // alert(data);
+          } else {
+            alert('request success!');
+          }
+        },
+        error1 => {
+        }
+    );
+    this.requests.subjectcode = '';
+    this.requests.subjectname = '';
+    this.select.subjectcodeText = '';
+    this.select.subjectnameText = '';
   }
 
   checkFile(state) {
@@ -593,6 +663,7 @@ export class MycourseComponent implements OnInit {
     posts.checkComment = false;
     console.log("commeeeeeeeeeeeeeeeeeeeeeeeeeeet"+posts.checkComment);
   }
+  
 }
 
 export class FacultyDataSource extends DataSource<any> {
