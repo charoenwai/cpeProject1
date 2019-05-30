@@ -121,6 +121,7 @@
 
 }
 .cardExpansion:hover{
+  cursor: pointer;
   background-color: ghostwhite;
   color: rgb(255, 19, 149);
   text-shadow: 1px 1px 1px rgba(0, 0, 0, 0.17);
@@ -150,7 +151,9 @@ tr.example-element-row:not(.example-expanded-row):hover {
 tr.example-element-row:not(.example-expanded-row):active {
   background: #efefef;
 }
-
+td:hover {
+  cursor: pointer;
+}
 .example-element-row td {
   border-bottom-width: 0;
 }
@@ -202,10 +205,6 @@ tr.example-element-row:not(.example-expanded-row):active {
   height: 315px;
 }
 
-.headerimage{
-  background-image: url('https://firebasestorage.googleapis.com/v0/b/cpeproject.appspot.com/o/49610433_513634159046415_4070154654594367488_n.jpg?alt=media&token=ab09a34b-4f85-4db5-9808-784b348e5ccd');
-  background-size: cover;
-}
 .courseOnline{
   margin-left: 9%;
   display: inline-block;

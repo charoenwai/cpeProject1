@@ -1,14 +1,20 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Observable } from 'rxjs';
-import { FacultyComponent, Post,Comment,Feedback,Request } from '../mycourse/mycourse.component';
+import { FacultyComponent, Post, Feedback, Comment, Request } from '../mycourse/mycourse.component';
+import {AngularFireStorage} from '@angular/fire/storage';
 
 @Injectable({
   providedIn: 'root'
 })
 export class PostService {
-  constructor(private http: HttpClient) { }
+  constructor(private http: HttpClient, private storage: AngularFireStorage) { }
   subjectFromUser: Array<any>;
+  picture: Array<string> = new Array<string>();
+  file: Array<string> = new Array<string>();
+  isUploadSuccess: boolean;
+  isUploading: boolean;
+  countDelete: number;
   public API = '//localhost:12345';
   getPost(): Object {
     return this.http.get(this.API + '/posts');
@@ -19,6 +25,9 @@ export class PostService {
   }
   getFaculty(): Observable<any> {
     return this.http.get(this.API + '/faculties');
+  }
+  getChips(): Observable<any> {
+    return this.http.get(this.API + '/chips');
   }
   getSubjects(): Observable<any> {
     return this.http.get(this.API + '/subjects');
@@ -61,20 +70,38 @@ export class PostService {
   }
 
   getSubjectFromUser(email): Observable<any> {
-    return this.http.get(this.API + '/subjectfromuser/'+ email);
+    return this.http.get(this.API + '/subjectfromuser/' + email);
   }
   getSubjectParseToArray(email) {
     this.getSubjectFromUser(email).subscribe(
       data => {
         this.subjectFromUser = data;
-        console.log(this.subjectFromUser);
       });
   }
-  getChip(chipName): Observable<any> {
-    return this.http.get(this.API + '/chip/' + chipName);
-  }
-  getChips(): Observable<any> {
-    return this.http.get(this.API + '/chips');
+  checkUpload () {
+    if (!this.isUploadSuccess) {
+      setTimeout(() => {
+        this.checkUpload();
+      }, 500);
+    } else {
+      if (this.picture.length > 0) {
+        for (let i = 0; i < this.picture.length; i++) {
+          let temp = (<string>this.picture[i]).split('/');
+          let picname = temp[7].split('?');
+          this.storage.ref(picname[0]).delete();
+        }
+      }
+      if (this.file.length > 0) {
+        for (let i = 0; i < this.file.length; i++) {
+          let temp = (<string>this.file[i]).split('/');
+          let filename = temp[7].split('?');
+          this.storage.ref(filename[0]).delete();
+        }
+      }
+      this.file.splice(0);
+      this.picture.splice(0);
+      this.isUploadSuccess = this.isUploading = false;
+    }
   }
   createComment(comment: Comment,postID): Observable<Comment> {
     const headers = new HttpHeaders();
@@ -97,5 +124,4 @@ export class PostService {
     headers.append('Content-Type', 'application/json');
     return this.http.post<Request>(this.API + '/request', JSON.stringify(request), { headers });
   }
-  
 }

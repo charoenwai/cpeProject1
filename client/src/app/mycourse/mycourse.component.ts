@@ -1,14 +1,15 @@
-import { Component, OnInit } from '@angular/core';
-import { DomSanitizer } from '@angular/platform-browser';
-import { MatIconRegistry } from '@angular/material';
-import { HttpClient } from '@angular/common/http';
-import { PostService } from '../service/post.service';
-import { AngularFireStorage, AngularFireStorageReference, AngularFireUploadTask } from '@angular/fire/storage';
-import { Observable } from 'rxjs/Observable';
-import { animate, state, style, transition, trigger } from '@angular/animations';
-import { DataSource } from '@angular/cdk/collections';
-import { ActivatedRoute, Router } from '@angular/router';
-import { AuthenService } from '../service/authen.service';
+import {Component, OnInit, ViewChild} from '@angular/core';
+import {DomSanitizer} from '@angular/platform-browser';
+import {MatIconRegistry} from '@angular/material';
+import {HttpClient} from '@angular/common/http';
+import {PostService} from '../service/post.service';
+import {AngularFireStorage, AngularFireStorageReference, AngularFireUploadTask} from '@angular/fire/storage';
+import {Observable} from 'rxjs/Observable';
+import {animate, state, style, transition, trigger} from '@angular/animations';
+import {DataSource} from '@angular/cdk/collections';
+import {ActivatedRoute, Router} from '@angular/router';
+import {AuthenService} from '../service/authen.service';
+import {ModalDirective} from 'angular-bootstrap-md';
 
 export  interface Comment {
   text: string;
@@ -32,6 +33,7 @@ export  interface Request {
     email: string
   };
 }
+
 export interface FacultyComponent {
   name: string;
 }
@@ -58,16 +60,18 @@ export interface Post {
   styleUrls: ['./mycourse.component.css'],
   animations: [
     trigger('detailExpand', [
-      state('collapsed', style({ height: '0px', minHeight: '0', display: 'none' })),
-      state('expanded', style({ height: '*' })),
+      state('collapsed', style({height: '0px', minHeight: '0', display: 'none'})),
+      state('expanded', style({height: '*'})),
       transition('expanded <=> collapsed', animate('225ms cubic-bezier(0.4, 0.0, 0.2, 1)')),
     ]),
   ],
 })
 export class MycourseComponent implements OnInit {
+  @ViewChild('basicModal') basicModal: ModalDirective;
+
   constructor(private postService: PostService, private httpClient: HttpClient, iconRegistry: MatIconRegistry,
-    private sanitizer: DomSanitizer, private storage: AngularFireStorage, private route: ActivatedRoute,
-    private router: Router, private authenService: AuthenService) {
+              private sanitizer: DomSanitizer, private storage: AngularFireStorage, private route: ActivatedRoute,
+              private router: Router, private authenService: AuthenService) {
     iconRegistry.addSvgIcon(
       'more',
       this.sanitizer.bypassSecurityTrustResourceUrl('assets/more.svg'));
@@ -107,8 +111,6 @@ export class MycourseComponent implements OnInit {
   ref: Array<AngularFireStorageReference> = new Array<AngularFireStorageReference>(30);
   refFile: Array<AngularFireStorageReference> = new Array<AngularFireStorageReference>(5);
   task: AngularFireUploadTask;
-  //
-  feedbackBoo: boolean;
   //
   nameSubject: string;
   codeSubject: string;
@@ -177,36 +179,36 @@ export class MycourseComponent implements OnInit {
   countPicStatus: number;
   disPlayName: string;
   isPosting: boolean;
-
+  feedbackBoo: boolean;
   inputCode: '';
+  where: string;
+  isTerminate: boolean;
+
   ngOnInit() {
+    this.authenService.getUserAndSaveOnsService();
     this.authenService.getLoggedInUser().subscribe(user => {
-      console.log(user);
-      this.user = user;
       this.posts.user.email = user.email;
-      
-      if (user.displayName !== null) {
-        this.disPlayName = user.displayName;
-      } else {
-        this.disPlayName = user.email;
+      if (!this.posts.user.email) {
+        this.router.navigate(['/login']);
       }
-      // user comment
-      this.comments.user.email = user.email;
-      this.comments.user.name = user.displayName;
-      // user feedback
-      this.feedbacks.user.email = user.email;
-      this.feedbacks.user.name = user.displayName;
-      // user request
-      this.requests.user.email = user.email;
-      this.requests.user.name = user.displayName;
-      console.log("print user: "+user);
-      console.log("print feedback user: "+this.requests.user.name);
-      //
-      this.feedbackBoo = true;
     });
+    // user comment
+    this.comments.user.email = this.authenService.user.email;
+    this.comments.user.name = this.authenService.user.displayName;
+    // user feedback
+    this.feedbacks.user.email = this.authenService.user.email;
+    this.feedbacks.user.name = this.authenService.user.displayName;
+    // user request
+    this.requests.user.email = this.authenService.user.email;
+    this.requests.user.name = this.authenService.user.displayName;
+    console.log("print user: "+ this.authenService.user);
+    console.log("print feedback user: "+this.requests.user.name);
+    this.feedbackBoo = true;
+
     this.posts.subject.code = this.codeSubject;
     this.posts.subject.name = this.nameSubject;
-
+    this.refresh();
+    this.isTerminate = false;
     this.countPicChoose = 0;
     this.countFileChoose = 0;
     this.countFileStatus = 0;
@@ -226,10 +228,13 @@ export class MycourseComponent implements OnInit {
       this.post = data;
     });
   }
+
   UPLOAD() {
-    console.log('File');
     for (let i = 0; i < this.countFileChoose; i++) {
-      this.refFile[i] = this.storage.ref( 'File' + this.dateAsYYYYMMDDHHNNSS(new Date()).concat(i.toString()));
+      if (this.isTerminate) {
+        break;
+      }
+      this.refFile[i] = this.storage.ref('File' + this.dateAsYYYYMMDDHHNNSS(new Date()).concat(i.toString()));
       this.refFile[i].put(this.file[i]).then((result) => {
         if (result.state !== 'success') {
           this.checkFile(result.state);
@@ -239,6 +244,7 @@ export class MycourseComponent implements OnInit {
               console.log('push');
               this.posts.file.push(data);
               this.posts.filename.push(this.file[i].name);
+              this.postService.file.push(data);
               this.countFileStatus += 1;
               console.log(this.countFileStatus);
               console.log(this.posts.file);
@@ -250,14 +256,16 @@ export class MycourseComponent implements OnInit {
   }
 
   UPLOADPIC() {
-    console.log('Pic');
-    if (this.countFileChoose !== this.countFileStatus) {
+    if (this.countFileChoose !== this.countFileStatus && !this.isTerminate) {
       setTimeout(() => {
         this.UPLOADPIC();
       }, 200);
     } else {
       for (let i = 0; i < this.countPicChoose; i++) {
-        this.ref[i] = this.storage.ref( 'Pic' + this.dateAsYYYYMMDDHHNNSS(new Date()).concat(i.toString()));
+        if (this.isTerminate) {
+          break;
+        }
+        this.ref[i] = this.storage.ref('Pic' + this.dateAsYYYYMMDDHHNNSS(new Date()).concat(i.toString()));
         this.ref[i].put(this.picture[i]).then((result) => {
           if (result.state !== 'success') {
             this.checkPicture(result.state);
@@ -266,6 +274,7 @@ export class MycourseComponent implements OnInit {
               data => {
                 console.log('push');
                 this.posts.picture.push(data);
+                this.postService.file.push(data)
                 this.countPicStatus += 1;
                 console.log(this.countPicStatus);
                 console.log(this.posts.picture);
@@ -278,49 +287,52 @@ export class MycourseComponent implements OnInit {
   }
 
   UPLOADALL() {
-    this.posts.text = this.select.text;
-    this.posts.vdolink = this.tempVdoLink;
-    this.postService.createArticle(this.posts).subscribe(
-      data => {
-        if (data) {
-          console.log(data);
-          alert(data);
-        } else {
-          alert('success');
-          this.isPost = false;
-          this.isPosting = false;
-          this.getFeed(this.codeSubject, this.nameSubject);
+    if (!this.isTerminate) {
+      this.posts.text = this.select.text;
+      this.posts.vdolink = this.tempVdoLink;
+      this.postService.createArticle(this.posts).subscribe(
+        data => {
+          if (data) {
+            console.log(data);
+            alert(data);
+          } else {
+            alert('success');
+            this.isPost = false;
+            this.isPosting = false;
+            this.getFeed(this.codeSubject, this.nameSubject);
+          }
+        },
+        error1 => {
         }
-      },
-      error1 => {
-      }
-    );
-    this.posts.text = '';
-    this.select.text = '';
-    this.posts.file.splice(0);
-    this.posts.vdolink.splice(0);
-    this.posts.picture.splice(0);
-    this.file.splice(0);
-    this.picture.splice(0);
-    this.countFileChoose = 0;
-    this.countFileStatus = 0;
-    this.countPicChoose = 0;
-    this.countPicStatus = 0;
-    this.countPic = 0;
-    this.countFile = 0;
+      );
+      this.posts.text = '';
+      this.select.text = '';
+      this.posts.file.splice(0);
+      this.posts.vdolink.splice(0);
+      this.posts.picture.splice(0);
+      this.file.splice(0);
+      this.picture.splice(0);
+      this.countFileChoose = 0;
+      this.countFileStatus = 0;
+      this.countPicChoose = 0;
+      this.countPicStatus = 0;
+      this.countPic = 0;
+      this.countFile = 0;
 
-    this.ref.splice(0);
-    this.refFile.splice(0);
-    for (let i = 0; i < this.count; i++) {
-      this.tempVdoLink[i] = '';
-      this.tempVdoLink2[i] = '';
+      this.ref.splice(0);
+      this.refFile.splice(0);
+      for (let i = 0; i < this.count; i++) {
+        this.tempVdoLink[i] = '';
+        this.tempVdoLink2[i] = '';
+      }
+      this.count = 0;
     }
-    this.count = 0;
   }
 
   test() {
     this.isPosting = true;
     if (this.countPicChoose !== 0 || this.countFileChoose !== 0) {
+      this.postService.isUploading = true;
       alert('Uploading...');
     }
     if (this.countFileChoose !== 0) {
@@ -330,62 +342,6 @@ export class MycourseComponent implements OnInit {
       this.UPLOADPIC();
     }
     this.checkSuccess();
-  }
-  postComment(postsID) {
-    // alert(postsID);
-    this.comments.text = this.select.commentText;
-    this.postService.createComment(this.comments, postsID).subscribe(
-        data => {
-          if (data) {
-            console.log("กดคอมเม้น"+data);
-            // alert(data);
-          } else {
-            alert('comment success!');
-            // this.getFeed(this.codeSubject, this.nameSubject);
-          }
-        },
-        error1 => {
-        }
-    );
-    this.comments.text = '';
-    this.select.commentText = '';
-  }
-  postFeedback() {
-    this.feedbacks.text = this.select.feedbackText;
-    this.postService.createFeedback(this.feedbacks).subscribe(
-        data => {
-          if (data) {
-            console.log("กดfeedback: "+data);
-            // alert(data);
-          } else {
-            alert('feedback success!');
-          }
-        },
-        error1 => {
-        }
-    );
-    this.feedbacks.text = '';
-    this.select.feedbackText = '';
-  }
-  postRequest(){
-    this.requests.subjectcode = this.select.subjectcodeText;
-    this.requests.subjectname = this.select.subjectnameText;
-    this.postService.createRequest(this.requests).subscribe(
-        data => {
-          if (data) {
-            console.log("กดrequest: "+data);
-            // alert(data);
-          } else {
-            alert('request success!');
-          }
-        },
-        error1 => {
-        }
-    );
-    this.requests.subjectcode = '';
-    this.requests.subjectname = '';
-    this.select.subjectcodeText = '';
-    this.select.subjectnameText = '';
   }
 
   checkFile(state) {
@@ -407,8 +363,10 @@ export class MycourseComponent implements OnInit {
   }
 
   checkSuccess() {
-    if (this.countPicStatus === this.countPicChoose && this.countFileStatus === this.countFileChoose) {
-      this.UPLOADALL();
+    if (this.isTerminate && this.countFileChoose === this.countFileStatus) {
+        this.postService.isUploadSuccess = true;
+    } else if (this.countFileStatus === this.countFileChoose && this.countPicStatus === this.countPicChoose) {
+        this.UPLOADALL();
     } else {
       setTimeout(() => {
         this.checkSuccess();
@@ -418,7 +376,7 @@ export class MycourseComponent implements OnInit {
 
   getMajor(facultyName) {
     this.major = null;
-    this.postService.getMajorByEmail(facultyName, this.posts.user.email).subscribe(data => {
+    this.postService.getMajorByEmail(facultyName, this.authenService.user.email).subscribe(data => {
       this.major = data;
     });
 
@@ -426,12 +384,15 @@ export class MycourseComponent implements OnInit {
 
   getSubject(majorName) {
     this.subject = null;
-    this.postService.getSubjectByEmail(majorName, this.posts.user.email).subscribe(data => {
+    this.postService.getSubjectByEmail(majorName, this.authenService.user.email).subscribe(data => {
       this.subject = data;
     });
   }
 
   getFeed(code, name) {
+    if (this.isPosting) {
+      this.basicModal.show();
+    }
     this.router.navigate(['/mycourse', code, name]);
     this.postService.getFeed(code).subscribe(data => {
       this.post = data;
@@ -446,6 +407,7 @@ export class MycourseComponent implements OnInit {
   getEmbedUrl(link) {
     return this.sanitizer.bypassSecurityTrustResourceUrl(link);
   }
+
   upload(event, index) {
     if (event.target.files[0].size > 25000000) {
       alert('The file you have selected is too large. The maximum size is 25MB. Please compress file');
@@ -473,11 +435,11 @@ export class MycourseComponent implements OnInit {
     if (this.posts.user.email === '') {
       setTimeout(() => {
         this.refresh();
-      }, 10);
+      }, 50);
     } else {
-      this.postService.getFacultyTableByEmail(this.posts.user.email).subscribe((res) => {
+      this.postService.getFacultyTableByEmail(this.authenService.user.email).subscribe((res) => {
         this.faculty = res;
-        this.dataSource = new FacultyDataSource(this.postService, this.posts.user.email);
+        this.dataSource = new FacultyDataSource(this.postService, this.authenService.user.email);
       });
     }
   }
@@ -565,6 +527,7 @@ export class MycourseComponent implements OnInit {
       if (this.picture[index].name.includes('png', 0) ||
         this.picture[index].name.includes('PNG', 0) ||
         this.picture[index].name.includes('jpg', 0) ||
+        this.picture[index].name.includes('JPEG', 0) ||
         this.picture[index].name.includes('JPG', 0)
       ) {
       } else {
@@ -609,33 +572,44 @@ export class MycourseComponent implements OnInit {
       }
     );
   }
+
   logout() {
+    if (this.isPosting) {
+      this.basicModal.show();
+    }
     this.router.navigate(['/login']);
     this.authenService.logout();
   }
+
   unfollow(code) {
-    this.httpClient.get('http://localhost:12345/unfollow/' + this.posts.user.email + '/' + code).subscribe(
+    this.httpClient.get('http://localhost:12345/unfollow/' + this.authenService.user.email + '/' + code).subscribe(
       data => {
         if (!data) {
           alert('Unfollow success');
-          this.postService.getFacultyTableByEmail(this.posts.user.email).subscribe((res) => {
+          this.postService.getFacultyTableByEmail(this.authenService.user.email).subscribe((res) => {
             this.faculty = res;
-            this.dataSource = new FacultyDataSource(this.postService, this.posts.user.email);
+            this.dataSource = new FacultyDataSource(this.postService, this.authenService.user.email);
           });
         }
       },
-      error => { }
+      error => {
+      }
     );
   }
+
   search() {
+    if (this.isPosting) {
+      this.basicModal.show();
+    }
     console.log(this.inputCode);
     if (this.inputCode === '') {
-        alert('Please enter subject code or subject name');
+      alert('Please enter subject code or subject name');
     } else {
-        this.router.navigate(['/searchcourse', this.inputCode]);
-        this.inputCode = '';
+      this.router.navigate(['/searchcourse', this.inputCode]);
+      this.inputCode = '';
     }
   }
+
   dateAsYYYYMMDDHHNNSS(date): string {
     return date.getFullYear()
       + '-' + this.leftpad(date.getMonth() + 1, 2)
@@ -648,6 +622,97 @@ export class MycourseComponent implements OnInit {
   leftpad(val, resultLength = 2, leftpadChar = '0'): string {
     return (String(leftpadChar).repeat(resultLength)
       + String(val)).slice(String(val).length);
+  }
+
+  goHome() {
+    this.where = 'home';
+    if (this.isPosting) {
+      this.basicModal.show();
+    } else {
+      this.router.navigate(['/'].concat(this.where));
+    }
+  }
+
+  goWelcome() {
+    this.where = 'welcome';
+    if (this.isPosting) {
+      this.basicModal.show();
+    } else {
+      this.router.navigate(['/'].concat(this.where));
+    }
+  }
+
+  goAboutMe() {
+    this.where = 'aboutme';
+    if (this.isPosting) {
+      this.basicModal.show();
+    } else {
+      this.router.navigate(['/'].concat(this.where));
+    }
+  }
+
+  leave() {
+    if (this.isPosting) {
+      this.isTerminate = true;
+    }
+    this.router.navigate(['/'].concat(this.where));
+  }
+  postComment(postsID) {
+    // alert(postsID);
+    this.comments.text = this.select.commentText;
+    this.postService.createComment(this.comments, postsID).subscribe(
+        data => {
+          if (data) {
+            console.log("กดคอมเม้น"+data);
+            // alert(data);
+          } else {
+            alert('comment success!');
+            this.getFeed(this.codeSubject, this.nameSubject);
+            // this.getFeed(this.codeSubject, this.nameSubject);
+          }
+        },
+        error1 => {
+        }
+    );
+    this.comments.text = '';
+    this.select.commentText = '';
+  }
+  postFeedback() {
+    this.feedbacks.text = this.select.feedbackText;
+    this.postService.createFeedback(this.feedbacks).subscribe(
+        data => {
+          if (data) {
+            console.log("กดfeedback: "+data);
+            // alert(data);
+          } else {
+            alert('feedback success!');
+          }
+        },
+        error1 => {
+        }
+    );
+    this.feedbacks.text = '';
+    this.select.feedbackText = '';
+  }
+  postRequest(){
+    this.requests.subjectcode = this.select.subjectcodeText;
+    this.requests.subjectname = this.select.subjectnameText;
+    this.postService.createRequest(this.requests).subscribe(
+        data => {
+          if (data) {
+            console.log("กดrequest: "+data);
+            // alert(data);
+          } else {
+            alert('request success!');
+          }
+        },
+        error1 => {
+        }
+    );
+    this.requests.subjectcode = '';
+    this.requests.subjectname = '';
+    this.select.subjectcodeText = '';
+    this.select.subjectnameText = '';
   }
   feedBackClick(feedBack){
     this.feedbackBoo = !this.feedbackBoo;
@@ -663,7 +728,6 @@ export class MycourseComponent implements OnInit {
     posts.checkComment = false;
     console.log("commeeeeeeeeeeeeeeeeeeeeeeeeeeet"+posts.checkComment);
   }
-  
 }
 
 export class FacultyDataSource extends DataSource<any> {

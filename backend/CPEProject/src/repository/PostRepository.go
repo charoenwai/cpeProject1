@@ -28,7 +28,7 @@ func (r *PostRepositoryMongo) Save(user *models.Post) error{
 }
 
 //Update
-func (r *PostRepositoryMongo) Update( post *models.Post) error{
+func (r *PostRepositoryMongo) Update(post *models.Post) error{
 	//Get ตัวแปรแล้วมาเปลี่ยนค่าแล้ว save
 	// faculty.UpdatedAt = time.Now()
 	err := r.db.C(r.collection).Update(bson.M{"_id": post.ID}, post)

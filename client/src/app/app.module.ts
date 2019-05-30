@@ -28,7 +28,7 @@ import { ReactiveFormsModule } from '@angular/forms';
 import { MatChipsModule} from '@angular/material/chips';
 import { MatAutocompleteModule} from '@angular/material/autocomplete';
 import { CarouselModule } from 'angular-bootstrap-md';
-import { InputsModule, WavesModule, ButtonsModule } from 'angular-bootstrap-md';
+import { InputsModule, WavesModule, ButtonsModule, ModalModule } from 'angular-bootstrap-md';
 
 import { HomeComponent } from './home/home.component';
 import { MycourseComponent } from './mycourse/mycourse.component';
@@ -37,6 +37,7 @@ import { SearchCourseComponent } from './search-course/search-course.component';
 import { VdoComponent, dialog } from './vdo/vdo.component';
 import { AdminPageComponent } from './admin-page/admin-page.component';
 import { AdminService } from './service/admin.service';
+import { WelcomeComponent } from './welcome/welcome.component';
 
 const appRoutes: Routes = [
   {path: 'login' , component: LoginComponent},
@@ -45,7 +46,8 @@ const appRoutes: Routes = [
   {path: 'mycourse/:code/:name' , component: MycourseComponent},
   {path: 'searchcourse/:code' , component: SearchCourseComponent},
   {path: '' , component: VdoComponent},
-  {path: 'admin' , component: AdminPageComponent}
+  {path: 'admin' , component: AdminPageComponent},
+  {path: 'welcome' , component: WelcomeComponent}
 ];
 
 @NgModule({
@@ -59,7 +61,8 @@ const appRoutes: Routes = [
     SearchCourseComponent,
     VdoComponent,
     dialog,
-    AdminPageComponent
+    AdminPageComponent,
+    WelcomeComponent
   ],
   imports: [
     BrowserModule,
@@ -100,7 +103,8 @@ const appRoutes: Routes = [
     InputsModule,
     WavesModule,
     ButtonsModule,
-    MatPaginatorModule
+    MatPaginatorModule,
+    ModalModule
   ],
   entryComponents: [dialog],
   providers: [AuthenService, ProfileService, PostService, AdminService],

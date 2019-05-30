@@ -22,7 +22,7 @@ export class ProfileComponent implements OnInit {
   input: any = {
     stuid: '',
     major: ''
-  }
+  };
 
   user: firebase.User;
   users: User = {
@@ -31,7 +31,7 @@ export class ProfileComponent implements OnInit {
     studentId: '',
     picture: '',
     major: ''
-  }
+  };
   getUser: Array<any>;
   constructor(private authenService: AuthenService, private profileService: ProfileService,
     private route: ActivatedRoute, private router: Router, private postService: PostService) { }
@@ -50,10 +50,11 @@ export class ProfileComponent implements OnInit {
             console.log(data);
             this.getUser = data;
             if (this.getUser !== null) {
-              this.router.navigate(['/home']);
+              this.authenService.getUserAndSaveOnsService();
+              this.router.navigate(['/welcome']);
             }
           }
-        )
+        );
         console.log(this.picURL);
       });
   }
@@ -73,7 +74,8 @@ export class ProfileComponent implements OnInit {
             alert(data);
           } else {
             alert('success');
-            this.router.navigate(['/home']);
+            this.authenService.getUserAndSaveOnsService();
+            this.router.navigate(['/welcome']);
           }
         },
         error1 => {
