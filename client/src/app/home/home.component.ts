@@ -101,7 +101,7 @@ export class HomeComponent implements OnInit {
   }
 
   follow(code) {
-    this.httpClient.get('http://localhost:12345/follow/' + this.authenService.user.email + '/' + code).subscribe(
+    this.httpClient.get(this.postService.API + '/follow/' + this.authenService.user.email + '/' + code).subscribe(
       data => {
         if (!data) {
           alert('Follow success');
