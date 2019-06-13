@@ -46,52 +46,53 @@
     height: 100%;
     overflow: auto;
 }
-.panelleft {
-    position: fixed;
-    float: left;
-    height: 100vh;
-    width: 10%;
-    background-color: rgb(233, 233, 233);
-}
 .panel1 {
-    margin-top: 10px;
-    height: 100vh;
-    position: absolute;
-    margin-left: 5%;
-    width: 25%;
+  margin-top: 10px;
+  height: 100vh;
+  position: absolute;
+  margin-left: 10%;
+  width: 300px;
 }
 
 .insidepanel1 {
-    position: fixed;
-    border-radius: 20px;
-    border-radius: 2px;
-    width: 25%;
-    background-color: rgb(189, 189, 189);
+  position: fixed;
+  border-radius: 20px;
+  border-radius: 2px;
+  width: 300px;
+  height: 205px;
+  background-color: rgb(189, 189, 189);
 }
 
 .panel2 {
-    min-width: 370px;
-    margin-top: 10px;
-    margin-left: 30%;
-    float: left;
-    position: absolute;
-    height: 100vh;
-    width: 65%;
+  min-width: 370px;
+  margin-top: 10px;
+  margin-left: calc(10% + 320px);
+  float: left;
+  position: absolute;
+  height: 100vh;
+  width: 59%;
 }
 
 .insidepanel2 {
-    margin-top: 0%;
-    position: absolute;
-    width: 100%;
+  margin-top: 0%;
+  position: absolute;
+  width: 100%;
+}
+.panelleft {
+  position: absolute;
+  float: left;
+  height: 100vh;
+  width: 10%;
+  background-color: rgb(233, 233, 233);
 }
 
 .panelright {
-    margin-left: 95%;
-    float: left;
-    position: fixed;
-    height: 100vh;
-    width: 5%;
-    background-color: rgb(233, 233, 233);
+  margin-left: 90%;
+  float: left;
+  position: absolute;
+  height: 100vh;
+  width: 10%;
+  background-color: rgb(233, 233, 233);
 }
 
 .example-header-image {
